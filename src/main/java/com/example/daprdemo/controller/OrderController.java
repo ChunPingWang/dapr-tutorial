@@ -3,14 +3,12 @@ package com.example.daprdemo.controller;
 import com.example.daprdemo.model.Order;
 import com.example.daprdemo.repository.OrderRepository;
 import com.example.daprdemo.service.OrderEventPublisher;
-import io.dapr.spring.data.repository.config.EnableDaprRepositories;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
 @RestController
 @RequestMapping("/orders")
-@EnableDaprRepositories
 public class OrderController {
 
     private final OrderRepository repository;
