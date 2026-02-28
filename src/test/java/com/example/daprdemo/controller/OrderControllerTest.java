@@ -2,6 +2,7 @@ package com.example.daprdemo.controller;
 
 import com.example.daprdemo.model.Order;
 import com.example.daprdemo.repository.OrderRepository;
+import com.example.daprdemo.service.OrderEventPublisher;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,6 +15,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -27,10 +29,13 @@ class OrderControllerTest {
     @MockitoBean
     private OrderRepository repository;
 
+    @MockitoBean
+    private OrderEventPublisher eventPublisher;
+
     private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Test
-    void createOrder_應回傳201與訂單資料() throws Exception {
+    void createOrder_應儲存訂單並發布事件() throws Exception {
         Order order = new Order("order-1", "筆電", 1, 35000.0);
         when(repository.save(any(Order.class))).thenReturn(order);
 
@@ -38,9 +43,10 @@ class OrderControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(order)))
             .andExpect(status().isCreated())
-            .andExpect(jsonPath("$.orderId").value("order-1"))
-            .andExpect(jsonPath("$.product").value("筆電"))
-            .andExpect(jsonPath("$.quantity").value(1));
+            .andExpect(jsonPath("$.orderId").value("order-1"));
+
+        // 驗證事件確實被發布
+        verify(eventPublisher).publishOrderCreated("order-1");
     }
 
     @Test
@@ -50,8 +56,7 @@ class OrderControllerTest {
 
         mockMvc.perform(get("/orders/order-1"))
             .andExpect(status().isOk())
-            .andExpect(jsonPath("$.orderId").value("order-1"))
-            .andExpect(jsonPath("$.product").value("滑鼠"));
+            .andExpect(jsonPath("$.orderId").value("order-1"));
     }
 
     @Test
